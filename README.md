@@ -40,18 +40,32 @@ ATLDSD/
 
 ## Data Split
 
-| Split | Proportion |
-|-------|-----------|
-| Train | 80 % |
-| Test | 20 % |
+### Dataset Split
 
-No separate validation set is used. Splits are generated with `torch.utils.data.random_split` using a fixed generator seed, making them **exactly reproducible** without needing saved index files:
+The dataset is evaluated using **Stratified K-Fold Cross-Validation**, where each fold preserves the original class distribution. During each iteration, one fold is used for testing while the remaining folds are used for training. This ensures that every sample is evaluated as part of the test set exactly once across the complete cross-validation process, providing a robust and reliable estimate of model performance.
 
-python
-generator = torch.Generator().manual_seed(42)
-train_indices, test_indices = random_split(
-    range(len(full_ds)), [train_size, test_size], generator=generator
+The data splits are generated using `sklearn.model_selection.StratifiedKFold` with `shuffle=True` and `random_state=42`, ensuring that the cross-validation process is **fully reproducible** without requiring saved index files.
+
+```python
+from sklearn.model_selection import StratifiedKFold
+
+skf = StratifiedKFold(
+    shuffle=True,
+    random_state=42
 )
+
+for fold, (train_indices, test_indices) in enumerate(
+    skf.split(X, y), start=1
+):
+    # Use train_indices and test_indices for the current fold
+    pass
+```
+
+| Split      | Strategy                           |
+| ---------- | ---------------------------------- |
+| Training   | Remaining folds                    |
+| Testing    | One fold                           |
+| Evaluation | Stratified K-Fold Cross-Validation |
 
 Re-running the notebook with `seed = 42` will produce the identical partition.
 
